@@ -14,6 +14,10 @@ return [
     'components' => [
         'request' => [
             'csrfParam' => '_csrf-frontend',
+            'enableCsrfValidation' => false,
+            'parsers' => [
+                'application/json' => 'yii/Web/JsonParser'
+            ],
         ],
         'user' => [
             'identityClass' => 'common\models\User',

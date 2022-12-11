@@ -13,23 +13,33 @@ class GetjsonController extends Controller
 {
 
 
-    public function actionIndex($data = null)
+    public function actionIndex()
     {
-        $headers = ['token_access' => '7792027245b7ff1db87d85f247216434'];
-        if ($this->checkTokenInHeader($headers)) {
-            if ($this->checkUserToken($headers['token_access'])) {
-                if ($this->checkEmptyData($data)) {
-                    $this->insertData($headers['token_access'], $data);
-                    return $this->render('getjson', ['code' => 200, 'header' => 'success', 'description' => 'the data has been uploaded successfully']);
+        $request = Yii::$app->request;
+        $data = "";
+        if ($request->isPost){ $data = $request->post('data');}
+        elseif ($request->isGet){ $data = $request->get('data');} else { $data = NULL;}
+
+        $headers = Yii::$app->request->headers;
+        $headers = $headers->get('token_access');
+        if (empty($data)) {
+            return $this->render('getjson', ['code' => 400, 'header' => 'bad request', 'description' => 'you didnt send the data parameter']);
+        } else {
+            if ($this->checkTokenInHeader($headers)) {
+                if ($this->checkUserToken($headers)) {
+                    if ($this->checkEmptyData($data)) {
+                        $this->insertData($headers, $data);
+                        return $this->render('getjson', ['code' => 200, 'header' => 'success', 'description' => 'the data has been uploaded successfully']);
+                    } else {
+                        return $this->render('getjson', ['code' => 404, 'header' => 'empty', 'description' => 'empty input data']);
+                    }
                 } else {
-                    return $this->render('getjson', ['code' => 404, 'header' => 'empty', 'description' => 'empty input data']);
+                    return $this->render('getjson', ['code' => 403, 'header' => 'access denied', 'description' => 'you have specified a non-existent token']);
                 }
             } else {
-                return $this->render('getjson', ['code' => 403, 'header' => 'access denied', 'description' => 'you have specified a non-existent token']);
+                return $this->render('getjson', ['code' => 403, 'header' => 'access denied', 'description' => 'there is no access key!']);
             }
-            } else {
-            return $this->render('getjson', ['code' => 403, 'header' => 'access denied', 'description' => 'there is no access key!']);
-            }
+        }
     }
 
     public function checkEmptyData($data): bool
@@ -37,9 +47,9 @@ class GetjsonController extends Controller
         if (empty($data)){ return false;} else{ return true;}
     }
 
-    public function checkTokenInHeader(array $header): bool
+    public function checkTokenInHeader(string $header): bool
     {
-        if (empty($header['token_access'])){return false;}else{return true;}
+        if (empty($header)){return false;}else{return true;}
     }
 
     public function insertData($token, $data)
